@@ -45,7 +45,6 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_ProjectKey }}
             -Dsonar.organization=${{ secrets.SONAR_OrgName }}
             -Dsonar.sources=.
-            -Dsonar.region=us
             -Dsonar.python.version=3.14
 
       - name: Package Windows Python app
