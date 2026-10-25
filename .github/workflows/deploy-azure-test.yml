@@ -2,7 +2,8 @@ name: Deploy BMI to Azure test slot
 
 on:
   push:
-    branches: [fb]
+    branches-ignore:
+      - main
   workflow_dispatch:
 
 permissions:
