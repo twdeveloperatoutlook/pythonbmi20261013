@@ -41,3 +41,15 @@ BMI = 體重（公斤）÷ 身高（公尺）²。分類採臺灣成人體位參
 請先在 Azure Web App 建立 `staging` deployment slot，並確認 App Service 方案支援 deployment slots，且該 slot 的 HttpPlatformHandler 與必要應用程式設定已就緒。服務主體必須對 `NTUSTweb00` 及其 slots 具有部署與 slot swap 權限（例如該站點範圍的 **Website Contributor**）。
 
 在 GitHub 儲存庫 **Settings → Environments** 建立 `staging` 與 `production`，並在 `production` 的 deployment protection rules 設定 **Required reviewers**；僅在 workflow 宣告 environment 不會自動啟用人工簽核。推送符合上述條件的 `main` 分支異動，或從 GitHub Actions 手動執行工作流程，確認 staging 部署結果後，再核准 production 部署以執行 swap。
+
+### Test slot 與 SonarCloud 掃描
+
+`.github/workflows/deploy-azure-test.yml` 在推送 `fb` 分支或手動觸發時執行，順序為 unit test → SonarCloud 掃描 → 打包 → 部署至 Azure `test` slot。掃描使用 `SonarSource/sonarqube-scan-action@v8.3.0`，Python 分析版本與測試環境一致，設定為 `3.14`；checkout 會取得完整 Git 歷史。測試或掃描步驟失敗時，不會繼續打包與部署。此流程未設定等待 Quality Gate 結果，因此掃描成功不代表 Quality Gate 通過。
+
+請先在 SonarCloud 建立對應專案，使用 CI-based analysis，並停用該專案的 Automatic Analysis。在 GitHub 儲存庫 **Settings → Secrets and variables → Actions** 設定以下 repository secrets：
+
+- `SONAR_TOKEN`：具有該 SonarCloud 專案分析權限的 token。
+- `ProjectKey`：SonarCloud 專案的 project key。
+- `OrgName`：SonarCloud 的 organization key，而非顯示名稱。
+
+若 SonarCloud 方案不支援分支分析，請確認 `fb` 是該 SonarCloud 專案的主分支，否則此分支的掃描可能失敗。
