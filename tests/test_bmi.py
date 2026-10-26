@@ -5,8 +5,8 @@ from bmi import bmi_guidance, calculate_bmi, gauge_angle
 
 class BmiUnitTests(unittest.TestCase):
     def test_calculate_bmi(self):
-        bmi, error_field = calculate_bmi(170, 65)
-        self.assertAlmostEqual(bmi, 65 / 1.7**2)
+        bmi, error_field = calculate_bmi(170, 70)
+        self.assertAlmostEqual(bmi, 70 / 1.7**2)
         self.assertIsNone(error_field)
 
     def test_calculate_bmi_rejects_unrepresentable_values(self):
