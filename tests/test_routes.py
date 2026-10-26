@@ -1,9 +1,9 @@
 import unittest
 
-from app import app, bmi_guidance, gauge_angle
+from app import app
 
 
-class BmiAppTests(unittest.TestCase):
+class BmiRouteTests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
@@ -72,18 +72,6 @@ class BmiAppTests(unittest.TestCase):
         self.assertIn(f'{escaped_name}，你的 BMI 計算結果</p>', page)
         self.assertIn("22.5", page)
 
-    def test_taiwan_adult_thresholds(self):
-        for bmi, category in [
-            (18.4, "體重過輕"),
-            (18.5, "健康體位"),
-            (23.9, "健康體位"),
-            (24.0, "體重過重"),
-            (26.9, "體重過重"),
-            (27.0, "肥胖"),
-        ]:
-            with self.subTest(bmi=bmi):
-                self.assertEqual(bmi_guidance(bmi)["label"], category)
-
     def test_result_color_by_category(self):
         with self.client.get("/static/style.css") as response:
             self.assertEqual(response.status_code, 200)
@@ -106,15 +94,12 @@ class BmiAppTests(unittest.TestCase):
             ("23.96", "high"),
         ]:
             with self.subTest(weight=weight):
-                response = self.client.post("/", data={"height": "100", "weight": weight})
+                response = self.client.post(
+                    "/", data={"height": "100", "weight": weight}
+                )
                 page = response.get_data(as_text=True)
                 self.assertIn(f'class="result-panel {tone}"', page)
                 self.assertIn('class="result-number"', page)
-
-    def test_gauge_angle_mapping(self):
-        for bmi, angle in [(5, -90.0), (10, -90.0), (18.5, -39.0), (24, -6.0), (25, 0.0), (27, 12.0), (40, 90.0), (55, 90.0)]:
-            with self.subTest(bmi=bmi):
-                self.assertEqual(gauge_angle(bmi), angle)
 
     def test_result_renders_gauge(self):
         response = self.client.post("/", data={"height": "170", "weight": "65"})
@@ -127,14 +112,18 @@ class BmiAppTests(unittest.TestCase):
     def test_invalid_fields_do_not_produce_result(self):
         for height, weight in [("", "65"), ("0", "65"), ("abc", "65"), ("170", "-2"), ("inf", "65"), ("170", "nan"), ("1e-300", "65"), ("1e308", "65"), ("1", "1e308")]:
             with self.subTest(height=height, weight=weight):
-                response = self.client.post("/", data={"height": height, "weight": weight})
+                response = self.client.post(
+                    "/", data={"height": height, "weight": weight}
+                )
                 page = response.get_data(as_text=True)
                 self.assertEqual(response.status_code, 200)
                 self.assertIn('aria-invalid="true"', page)
                 self.assertNotIn("YOUR RESULT", page)
 
     def test_input_is_escaped(self):
-        response = self.client.post("/", data={"height": '<script>alert(1)</script>', "weight": "65"})
+        response = self.client.post(
+            "/", data={"height": '<script>alert(1)</script>', "weight": "65"}
+        )
         page = response.get_data(as_text=True)
         self.assertNotIn("<script>", page)
         self.assertIn("請輸入大於 0", page)
